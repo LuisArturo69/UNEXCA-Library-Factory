@@ -22,15 +22,15 @@ El enfoque principal de este proyecto es la **resiliencia**: un software "blinda
 ## 👥 Equipo (LOS APOSTOLES)
 *   **Lider de Equipo** Luis Arturo Silva Rollin V-28.101.742
 *   **Equpo de Pruebas**
-    1. Luis Arturo Silva Rollin V-28.101.742
-    2. Manuel Jesus Noriega Lopez  V-25.216.071
+    1.Luis Arturo Silva Rollin V-28.101.742
+    2.Manuel Jesus Noriega Lopez  V-25.216.071
 *   **Lideres de Desarrollo**
 *   1.Jose Miguel Niño Gil V-29.909.282
 *   2.Deninson Jose Godoy Celis V-28.158.313   
 *   **Equipo de Desarrollo (Los Apostoles):**
-    1. Luis Arturo Silva Rollin V-28.101.742
-    2. Manuel Jesus Noriega Lopez  V-25.216.071
-    3. Manuel Tellez V-20.027.142
-    4. Jose Miguel Niño Gil V-29.909.282
-    5. Yuseily Nathaly Valero Albarran V-31.660.944
-    6. Deninson Jose Godoy Celis V-28.158.313
+    1.Luis Arturo Silva Rollin V-28.101.742
+    2.Manuel Jesus Noriega Lopez  V-25.216.071
+    3.Manuel Tellez V-20.027.142
+    4.Jose Miguel Niño Gil V-29.909.282
+    5.Yuseily Nathaly Valero Albarran V-31.660.944
+    6.Deninson Jose Godoy Celis V-28.158.313
