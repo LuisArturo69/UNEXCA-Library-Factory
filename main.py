@@ -6,7 +6,8 @@ DB_PATH = "data/inventario.json"
 # Datos de prueba (Luego usaremos el Factory para esto)
 datos_ejemplo = [
     {"id": 1, "tipo": "Libro", "nombre": "Cien años de soledad"},
-    {"id": 2, "tipo": "Laptop", "marca": "Dell"}
+    {"id": 2, "tipo": "Laptop", "marca": "Dell"},
+    {"id": 3, "tipo": "tablet", "marca": "Samsung"}
 ]
 
 # 1. Probamos guardar
