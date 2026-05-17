@@ -13,5 +13,15 @@
         "id": 3,
         "tipo": "tablet",
         "marca": "Samsung"
+    },
+    {
+        "id": 4,
+        "tipo": "tasblet",
+        "marca": "Sonic"
+    },
+    {
+        "id": 5,
+        "tipo": "Laptop",
+        "marca": "Lenovo"
     }
 ]

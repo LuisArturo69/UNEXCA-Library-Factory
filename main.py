@@ -7,7 +7,9 @@ DB_PATH = "data/inventario.json"
 datos_ejemplo = [
     {"id": 1, "tipo": "Libro", "nombre": "Cien años de soledad"},
     {"id": 2, "tipo": "Laptop", "marca": "Dell"},
-    {"id": 3, "tipo": "tablet", "marca": "Samsung"}
+    {"id": 3, "tipo": "tablet", "marca": "Samsung"}, 
+     {"id": 4, "tipo": "tasblet", "marca": "Sonic"}, 
+      {"id": 5, "tipo": "Laptop", "marca": "Lenovo"}
 ]
 
 # 1. Probamos guardar
