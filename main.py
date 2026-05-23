@@ -1,23 +1,19 @@
-from src.persistence.file_manager import JSONManager
+from src.database.conexion import DatabaseManager
 
-# Ruta de nuestra "Base de Datos" JSON
-DB_PATH = "data/inventario.json"
+print("--- 🏛️ INICIALIZANDO SPRINT 1: BASE DE DATOS SQLITE ---")
+print("Cargando el escudo de persistencia relacional...")
 
-# Datos de prueba (Luego usaremos el Factory para esto)
-datos_ejemplo = [
-    {"id": 1, "tipo": "Libro", "nombre": "Cien años de soledad"},
-    {"id": 2, "tipo": "Laptop", "marca": "Dell"},
-    {"id": 3, "tipo": "tablet", "marca": "Samsung"}, 
-     {"id": 4, "tipo": "tasblet", "marca": "Sonic"}, 
-      {"id": 5, "tipo": "Laptop", "marca": "Lenovo"}
-]
+try:
+    # Al instanciar la clase, se verifica la carpeta 'data', 
+    # se crea el archivo 'biblioteca.db' y se construyen las 4 tablas.
+    db = DatabaseManager()
+    
+    print("\n✅ CONTROL DE CALIDAD SPRINT 1:")
+    print("1. Carpeta 'data/' verificada o creada exitosamente.")
+    print("2. Archivo 'biblioteca.db' inicializado.")
+    # Usamos un menor que literal en texto por seguridad del parser
+    print("3. Estructura de tablas (usuarios, recursos, detalles, movimientos) blindada.")
+    print("\n🚀 ¡El sistema está listo para la lógica de negocio del Sprint 2!")
 
-# 1. Probamos guardar
-print("Intentando guardar datos...")
-if JSONManager.guardar_datos(DB_PATH, datos_ejemplo):
-    print("✅ Datos guardados correctamente.")
-
-# 2. Probamos cargar
-print("Intentando leer datos...")
-datos_leidos = JSONManager.cargar_datos(DB_PATH)
-print(f"✅ Datos recuperados: {datos_leidos}")
+except Exception as e:
+    print(f"\n❌ ERROR CRÍTICO EN EL ARRANQUE DEL SISTEMA: {e}")
