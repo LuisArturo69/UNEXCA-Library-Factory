@@ -4,10 +4,15 @@ from src.database.conexion import DatabaseManager
 class InventarioController:
     """Controlador encargado de las operaciones CRUD del inventario en SQLite."""
 
-    def __init__(self):
-        # Reutilizamos el gestor de conexión que creaste en el Sprint 1
-        self.db_manager = DatabaseManager()
-
+#    def __init__(self):
+#        # Reutilizamos el gestor de conexión que creaste en el Sprint 1
+#        self.db_manager = DatabaseManager()
+#-----------------------------------------------------------------------------------
+      def __init__(self, db_manager):
+        # En lugar de hacer un self.db_manager = DatabaseManager(), 
+        # inyectamos el gestor que ya inicializó el main de forma segura.
+        self.db_manager = db_manager
+#-----------------------------------------------------------------------------------
     def registrar_recurso(self, tipo, nombre, estado="Disponible", detalles=None):
         """
         C: CREATE - Inserta un recurso y sus detalles específicos de forma segura.
