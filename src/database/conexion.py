@@ -4,12 +4,31 @@ import os
 class DatabaseManager:
     """Clase encargada de conectar y asegurar la integridad de la base de datos."""
     
+#    def __init__(self, db_path="data/biblioteca.db"):
+#        self.db_path = db_path
+#        # Blindaje: Asegurar que la carpeta data exista antes de conectar
+#        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+#        self.crear_tablas()
+#-------------------------------------------------------------------------------------
     def __init__(self, db_path="data/biblioteca.db"):
-        self.db_path = db_path
-        # Blindaje: Asegurar que la carpeta data exista antes de conectar
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-        self.crear_tablas()
+        # Blindaje: Si la ruta es relativa, la convertimos en una ruta absoluta
+        # calculada desde la ubicación real de este archivo del proyecto.
+        if not os.path.isabs(db_path):
+            # Ruta de 'src/database'
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+            # Subimos dos niveles para llegar a la raíz del proyecto
+            raiz_proyecto = os.path.dirname(os.path.dirname(base_dir))
+            # Unimos la raíz con la ruta del archivo (ej: 'C:/.../proyecto/data/biblioteca.db')
+            self.db_path = os.path.join(raiz_proyecto, db_path)
+        else:
+            self.db_path = db_path
 
+        # Asegurar que la carpeta 'data' exista en la ruta absoluta correcta antes de conectar
+        carpeta_data = os.path.dirname(self.db_path)
+        os.makedirs(carpeta_data, exist_ok=True)
+        
+        self.crear_tablas()
+#------------------------------------------------------------------------------------- 
     def conectar(self):
         """Establece conexión con la base de datos aplicando el escudo try-except."""
         try:
