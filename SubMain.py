@@ -7,10 +7,15 @@ def inicializar_sistema():
     print("---  INICIALIZANDO SISTEMA UNEXCA-LIBRARY-FACTORY ---")
     print("Cargando el escudo de persistencia relacional...")
     try:
+#        # Fase Estructural
+#        db = DatabaseManager()
+#        controlador = InventarioController()
+#-----------------------------------------------------------------------------------------
         # Fase Estructural
-        db = DatabaseManager()
-        controlador = InventarioController()
-        
+        db = DatabaseManager() # Este es el único gestor oficial
+        # Le pasamos la instancia 'db' al controlador para que trabajen sincronizados
+        controlador = InventarioController(db_manager=db) 
+#-----------------------------------------------------------------------------------------        
         print("\n CONTROL DE CALIDAD SPRINT 1 Y 2:")
         print("1. Carpeta 'data/' y archivo 'biblioteca.db' verificados.")
         print("2. Estructura de tablas blindada.")
