@@ -118,4 +118,11 @@ def main():
             print(f" Ocurrió un error al procesar tu solicitud: {e}")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"\n Ocurrió un error inesperado en la ejecución general: {e}")
+    #ACTUALIZADO POR LUIS SILVA EL 31052026 PARA PODER EJECUTAr directamente desde navegador de archivos#
+    # Esta línea es un salvavidas si ejecutas fuera de una terminal integrada.
+    # Evita que la ventana se cierre automáticamente si el programa falla al arrancar.
+    input("\nPresiona ENTER para cerrar la ventana...")
