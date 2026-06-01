@@ -1,4 +1,4 @@
-# 🏛️ Library-Factory: Sistema de préstamo de recursos
+# 🏛️ Factory Apostol: Sistema de préstamo de recursos
 
 ## 🚀 Descripción
 UNEXCA-Library-Factory es una solución de ingeniería diseñada para la gestión de recursos (libros, laptops y tablets) de la UNEXCA. El sistema utiliza el patrón de diseño **Factory Method** para tratar cada recurso de forma profesional y escalable.
