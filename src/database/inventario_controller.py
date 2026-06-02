@@ -1,151 +1,204 @@
 import sqlite3
+from datetime import datetime
 from src.database.conexion import DatabaseManager
 
 class InventarioController:
-    """Controlador encargado de las operaciones CRUD del inventario en SQLite."""
+    """Controlador encargado de las operaciones CRUD del inventario adaptado a Excel."""
 
-#    def __init__(self):
-#        # Reutilizamos el gestor de conexión que creaste en el Sprint 1
-#        self.db_manager = DatabaseManager()
-#-----------------------------------------------------------------------------------
-      def __init__(self, db_manager):
-        # En lugar de hacer un self.db_manager = DatabaseManager(), 
-        # inyectamos el gestor que ya inicializó el main de forma segura.
+    def __init__(self, db_manager):
+        # Inyectamos el gestor que ya inicializó el main de forma segura.
         self.db_manager = db_manager
-#-----------------------------------------------------------------------------------
-    def registrar_recurso(self, tipo, nombre, estado="Disponible", detalles=None):
+
+    # =========================================================================
+    # 1. GESTIÓN DE RECURSOS (Tabla: Features)
+    # =========================================================================
+    def registrar_recurso(self, tipo, nombre, detalles=None):
         """
-        C: CREATE - Inserta un recurso y sus detalles específicos de forma segura.
-        'detalles' debe ser un diccionario. Ej: {"autor": "Leithold"} o {"serial": "XYZ"}
+        C: CREATE - Inserta un recurso en la tabla 'Features' formateando los 
+        atributos dinámicos del Factory en un solo string separado por '|'.
         """
         conn = self.db_manager.conectar()
-        if not conn:
+        if not conn: 
             return False
-
+            
         try:
             cursor = conn.cursor()
             
-            # 1. Insertar en la tabla general de recursos
-            cursor.execute("""
-                INSERT INTO recursos (tipo, nombre_recurso, estado)
-                VALUES (?, ?, ?);
-            """, (tipo, nombre, estado))
-            
-            # Obtener el ID generado automáticamente para este recurso
-            recurso_id = cursor.lastrowid
-
-            # 2. Insertar los detalles específicos (Atributos dinámicos para el Factory)
+            # Procesar el diccionario de detalles para convertirlo al formato string de Excel
             if detalles and isinstance(detalles, dict):
-                for clave, valor in detalles.items():
-                    cursor.execute("""
-                        INSERT INTO detalles_recursos (recurso_id, clave, valor)
-                        VALUES (?, ?, ?);
-                    """, (recurso_id, clave, str(valor)))
+                # Filtramos 'id_factory' para no mezclarlo con el texto plano si no es necesario
+                valores_detalles = [str(v) for k, v in detalles.items() if k != 'id_factory']
+                descripcion_compuesta = f"{nombre}|" + "|".join(valores_detalles)
+            else:
+                descripcion_compuesta = nombre
 
-            # Guardamos los cambios de forma definitiva (Transacción exitosa)
+            # Capturar fecha y hora actual para cumplir con lastupdate y lasttime
+            ahora = datetime.now()
+            fecha_actual = ahora.strftime("%d/%m/%Y")
+            hora_actual = ahora.strftime("%I:%M %p").lower()
+            
+            # Cantidad inicial por defecto para el recurso creado
+            unidades_iniciales = 3 
+
+            cursor.execute("""
+                INSERT INTO Features (tipo_de_bien, descripcion, lastupdate, lasttime, unidades)
+                VALUES (?, ?, ?, ?, ?);
+            """, (tipo.lower(), descripcion_compuesta, fecha_actual, hora_actual, unidades_iniciales))
+            
+            recurso_id = cursor.lastrowid
             conn.commit()
-            print(f"✅ Recurso '{nombre}' [{tipo}] registrado con ID: {recurso_id}")
+            print(f"✅ Recurso '{nombre}' registrado en Features con ID: {recurso_id}")
             return True
-
+            
         except sqlite3.Error as e:
-            # Si algo falla, cancelamos toda la operación para evitar datos huérfanos
             conn.rollback()
-            print(f"❌ ERROR DE BLINDAJE (CRUD Registrar): {e}")
+            print(f"❌ ERROR DE BLINDAJE (Registrar en Features): {e}")
             return False
         finally:
             conn.close()
 
     def consultar_inventario(self):
         """
-        R: READ - Obtiene todos los recursos con sus detalles agrupados.
-        Devuelve una lista de diccionarios lista para ser usada en la interfaz.
+        R: READ - Obtiene de forma masiva y eficiente el inventario de la tabla Features.
+        Mantiene compatibilidad de salida para evitar que falle el main.py original.
         """
         conn = self.db_manager.conectar()
-        if not conn:
+        if not conn: 
             return []
-
+            
         try:
             cursor = conn.cursor()
-            
-            # Consultamos los recursos básicos
-            cursor.execute("SELECT id, tipo, nombre_recurso, estado FROM recursos;")
-            recursos_raw = cursor.fetchall()
+            cursor.execute("SELECT id_recurso, tipo_de_bien, descripcion, lastupdate, lasttime, unidades FROM Features;")
+            registros = cursor.fetchall()
             
             inventario_completo = []
-
-            for r_id, tipo, nombre, estado in recursos_raw:
-                # Buscamos los detalles asociados a este ID específico
-                cursor.execute("SELECT clave, valor FROM detalles_recursos WHERE recurso_id = ?;", (r_id,))
-                detalles_raw = cursor.fetchall()
-                diccionario_detalles = {clave: valor for clave, valor in detalles_raw}
-
-                # Estructuramos el objeto completo
+            for id_rec, tipo, desc, fecha, hora, und in registros:
+                # Estructuramos el diccionario con las claves que tu main.py lee en el ciclo
                 item = {
-                    "id": r_id,
-                    "tipo": tipo,
-                    "nombre": nombre,
-                    "estado": estado,
-                    "detalles": diccionario_detalles
+                    "id": id_rec,
+                    "tipo": tipo.capitalize(),
+                    "nombre": desc.split('|')[0],  # El primer elemento antes del pipe es el nombre
+                    "estado": f"{und} Unidades disponibles",
+                    "detalles": f"{desc} | Última Modificación: {fecha} {hora}"
                 }
                 inventario_completo.append(item)
-
             return inventario_completo
-
-        except sqlite3.Error as e:
-            print(f"❌ ERROR DE BLINDAJE (CRUD Consultar): {e}")
-            return []
-        finally:
-            conn.close()
-
-    def actualizar_estado(self, recurso_id, nuevo_estado):
-        """
-        U: UPDATE - Modifica el estado del recurso (Disponible, Prestado, Mantenimiento).
-        """
-        conn = self.db_manager.conectar()
-        if not conn:
-            return False
-
-        try:
-            cursor = conn.cursor()
-            cursor.execute("""
-                UPDATE recursos 
-                SET estado = ? 
-                WHERE id = ?;
-            """, (nuevo_estado, recurso_id))
             
-            conn.commit()
-            if cursor.rowcount > 0:
-                print(f"✅ Estado del recurso ID {recurso_id} actualizado a: {nuevo_estado}")
-                return True
-            else:
-                print(f"⚠️ No se encontró ningún recurso con el ID {recurso_id}")
-                return False
         except sqlite3.Error as e:
-            print(f"❌ ERROR DE BLINDAJE (CRUD Actualizar): {e}")
-            return False
+            print(f"❌ ERROR DE BLINDAJE (Consultar Features): {e}")
+            return []
         finally:
             conn.close()
 
     def eliminar_recurso(self, recurso_id):
         """
-        D: DELETE - Elimina un recurso del sistema.
-        Gracias a 'ON DELETE CASCADE' en la base de datos, sus detalles se borran solos.
+        D: DELETE - Elimina un recurso permanentemente de la tabla Features.
         """
         conn = self.db_manager.conectar()
-        if not conn:
+        if not conn: 
             return False
 
         try:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM recursos WHERE id = ?;", (recurso_id,))
+            cursor.execute("DELETE FROM Features WHERE id_recurso = ?;", (recurso_id,))
             conn.commit()
             
             if cursor.rowcount > 0:
-                print(f"🗑️ Recurso ID {recurso_id} eliminado permanentemente del sistema.")
+                print(f"🗑️ Recurso ID {recurso_id} eliminado de Features.")
                 return True
-            return False
+            else:
+                print(f"⚠️ No se encontró el recurso ID {recurso_id}.")
+                return False
         except sqlite3.Error as e:
-            print(f"❌ ERROR DE BLINDAJE (CRUD Eliminar): {e}")
+            print(f"❌ ERROR DE BLINDAJE (Eliminar Recurso): {e}")
+            return False
+        finally:
+            conn.close()
+
+
+    # =========================================================================
+    # 2. GESTIÓN DE MOVIMIENTOS (Tabla: movements)
+    # =========================================================================
+    def registrar_prestamo(self, id_recurso, usuario_nombre="luis", rol_usuario=1):
+        """
+        U/C: UPDATE/CREATE - Descuenta 1 unidad de stock de Features y asienta
+        el registro de la transacción de forma blindada en la tabla 'movements'.
+        """
+        conn = self.db_manager.conectar()
+        if not conn: 
+            return False
+            
+        try:
+            cursor = conn.cursor()
+
+            # 1. Verificar existencias del recurso en Features antes de prestar
+            cursor.execute("SELECT unidades FROM Features WHERE id_recurso = ?;", (id_recurso,))
+            recurso = cursor.fetchone()
+
+            if not recurso:
+                print(f"⚠️ El recurso con ID {id_recurso} no existe en el sistema.")
+                return False
+
+            unidades_actuales = recurso[0]
+            if unidades_actuales <= 0:
+                print(f"❌ Operación rechazada: No quedan unidades físicas disponibles para el ID {id_recurso}.")
+                return False
+
+            # Generar datos de fecha y hora para el registro
+            ahora = datetime.now()
+            fecha_actual = ahora.strftime("%d/%m/%Y")
+            hora_actual = ahora.strftime("%I:%M %p").lower()
+
+            # 2. Actualizar stock restando una unidad e indicando momento de la acción
+            cursor.execute("""
+                UPDATE Features 
+                SET unidades = ?, lastupdate = ?, lasttime = ? 
+                WHERE id_recurso = ?;
+            """, (unidades_actuales - 1, fecha_actual, hora_actual, id_recurso))
+
+            # 3. Insertar el registro correspondiente en la tabla movements
+            cursor.execute("""
+                INSERT INTO movements (id_recurso, usuario, Rollusuario, Tipodeaccion, fecha)
+                VALUES (?, ?, ?, ?, ?);
+            """, (id_recurso, usuario_nombre, rol_usuario, 'Prestamo', fecha_actual))
+
+            # Transacción completa segura
+            conn.commit()
+            print(f"✅ Préstamo procesado con éxito para el recurso ID {id_recurso}.")
+            print(f"📉 Stock actualizado: {unidades_actuales - 1} unidades restantes.")
+            return True
+            
+        except sqlite3.Error as e:
+            conn.rollback()
+            print(f"❌ ERROR DE BLINDAJE (Transacción Préstamo): {e}")
+            return False
+        finally:
+            conn.close()
+
+
+    # =========================================================================
+    # 3. GESTIÓN DE USUARIOS Y ROLES (Tablas: Users / user_roles)
+    # =========================================================================
+    def registrar_usuario(self, cedula, nombre, roll=4, pasword="123", mail="correo@gmail.com"):
+        """Inserta un nuevo usuario en la tabla Users usando llaves foráneas a user_roles."""
+        conn = self.db_manager.conectar()
+        if not conn: 
+            return False
+            
+        try:
+            cursor = conn.cursor()
+            fecha_actual = datetime.now().strftime("%d/%m/%Y")
+            
+            cursor.execute("""
+                INSERT INTO Users (cedula, nombre, fecha_creacion, roll, pasword, mail)
+                VALUES (?, ?, ?, ?, ?, ?);
+            """, (cedula, nombre, fecha_actual, roll, pasword, mail))
+            
+            conn.commit()
+            print(f"👤 Usuario '{nombre}' registrado con éxito en el sistema.")
+            return True
+        except sqlite3.Error as e:
+            print(f"❌ ERROR DE BLINDAJE (Registrar Usuario): {e}")
             return False
         finally:
             conn.close()
