@@ -1,47 +1,5 @@
-import sqlite3
-import os
-
-class DatabaseManager:
-    """Clase encargada de conectar y asegurar la integridad de la base de datos."""
-    
-#    def __init__(self, db_path="data/biblioteca.db"):
-#        self.db_path = db_path
-#        # Blindaje: Asegurar que la carpeta data exista antes de conectar
-#        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-#        self.crear_tablas()
-#-------------------------------------------------------------------------------------
-    def __init__(self, db_path="data/biblioteca.db"):
-        # Blindaje: Si la ruta es relativa, la convertimos en una ruta absoluta
-        # calculada desde la ubicación real de este archivo del proyecto.
-        if not os.path.isabs(db_path):
-            # Ruta de 'src/database'
-            base_dir = os.path.dirname(os.path.abspath(__file__))
-            # Subimos dos niveles para llegar a la raíz del proyecto
-            raiz_proyecto = os.path.dirname(os.path.dirname(base_dir))
-            # Unimos la raíz con la ruta del archivo (ej: 'C:/.../proyecto/data/biblioteca.db')
-            self.db_path = os.path.join(raiz_proyecto, db_path)
-        else:
-            self.db_path = db_path
-
-        # Asegurar que la carpeta 'data' exista en la ruta absoluta correcta antes de conectar
-        carpeta_data = os.path.dirname(self.db_path)
-        os.makedirs(carpeta_data, exist_ok=True)
-        
-        self.crear_tablas()
-#------------------------------------------------------------------------------------- 
-    def conectar(self):
-        """Establece conexión con la base de datos aplicando el escudo try-except."""
-        try:
-            conn = sqlite3.connect(self.db_path)
-            # Activar el soporte para llaves foráneas (Foreign Keys)
-            conn.execute("PRAGMA foreign_keys = ON;")
-            return conn
-        except sqlite3.Error as e:
-            print(f"❌ ERROR DE BLINDAJE (Conexión SQL): {e}")
-            return None
-
-    def crear_tablas(self):
-        """Crea las tablas iniciales si no existen en el sistema."""
+def crear_tablas(self):
+        """Crea las tablas definitivas basadas en las 4 tablas de Excel."""
         conn = self.conectar()
         if not conn:
             return
@@ -49,53 +7,75 @@ class DatabaseManager:
         try:
             cursor = conn.cursor()
 
-            # 1. Tabla de Usuarios
+            # 1. Tabla de Roles de Usuario (user_roles) - NUEVA
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS usuarios (
-                    cedula TEXT PRIMARY KEY,
+                CREATE TABLE IF NOT EXISTS user_roles (
+                    id_rol INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Roll TEXT NOT NULL UNIQUE,
+                    Descripcion TEXT NOT NULL,
+                    Permisos TEXT NOT NULL
+                );
+            """)
+
+            # 2. Tabla de Usuarios (Users) - Modificada FK
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS Users (
+                    id_user INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cedula TEXT NOT NULL UNIQUE,
                     nombre TEXT NOT NULL,
-                    contrasena TEXT NOT NULL,
-                    rol TEXT NOT NULL CHECK(rol IN ('Administrador', 'Operador'))
+                    fecha_creacion TEXT NOT NULL,
+                    roll INTEGER, -- Ahora apunta al id_rol numérico de user_roles
+                    pasword TEXT NOT NULL,
+                    mail TEXT NOT NULL,
+                    FOREIGN KEY (roll) REFERENCES user_roles(id_rol)
                 );
             """)
 
-            # 2. Tabla General de Recursos (Inventario)
+            # 3. Tabla Principal de Inventario (Features)
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS recursos (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    tipo TEXT NOT NULL CHECK(tipo IN ('Libro', 'Laptop', 'Tablet')),
-                    nombre_recurso TEXT NOT NULL,
-                    estado TEXT NOT NULL DEFAULT 'Disponible' CHECK(estado IN ('Disponible', 'Prestado', 'Mantenimiento'))
+                CREATE TABLE IF NOT EXISTS Features (
+                    id_recurso INTEGER PRIMARY KEY AUTOINCREMENT,
+                    tipo_de_bien TEXT NOT NULL,
+                    descripcion TEXT NOT NULL,
+                    lastupdate TEXT NOT NULL,
+                    lasttime TEXT NOT NULL,
+                    unidades INTEGER NOT NULL DEFAULT 0
                 );
             """)
 
-            # 3. Tabla de Detalles Específicos (Para el Factory Method)
+            # 4. Tabla de Historial (movements) - Modificada FK
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS detalles_recursos (
-                    id_detalle INTEGER PRIMARY KEY AUTOINCREMENT,
-                    recurso_id INTEGER,
-                    clave TEXT NOT NULL,       -- Ej: 'autor', 'serial', 'pantalla'
-                    valor TEXT NOT NULL,       -- Ej: 'Louis Leithold', 'HP123', '10.5'
-                    FOREIGN KEY (recurso_id) REFERENCES recursos(id) ON DELETE CASCADE
-                );
-            """)
-
-            # 4. Tabla de Historial de Movimientos
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS movimientos (
+                CREATE TABLE IF NOT EXISTS movements (
                     id_movimiento INTEGER PRIMARY KEY AUTOINCREMENT,
-                    recurso_id INTEGER,
-                    usuario_cedula TEXT,
-                    tipo_accion TEXT NOT NULL CHECK(tipo_accion IN ('Préstamo', 'Devolución')),
+                    id_recurso INTEGER,
+                    usuario TEXT NOT NULL,
+                    Rollusuario INTEGER, -- Ahora apunta al id_rol numérico de user_roles
+                    Tipodeaccion TEXT NOT NULL CHECK(Tipodeaccion IN ('Prestamo', 'Devolucion')),
                     fecha TEXT NOT NULL,
-                    FOREIGN KEY (recurso_id) REFERENCES recursos(id),
-                    FOREIGN KEY (usuario_cedula) REFERENCES usuarios(cedula)
+                    FOREIGN KEY (id_recurso) REFERENCES Features(id_recurso) ON DELETE CASCADE,
+                    FOREIGN KEY (Rollusuario) REFERENCES user_roles(id_rol)
                 );
             """)
+
+            # POBILACIÓN AUTOMÁTICA DE ROLES POR DEFECTO
+            # Inserta los 4 roles basicos si la tabla está recién creada (vacía)
+            cursor.execute("SELECT COUNT(*) FROM user_roles;")
+            if cursor.fetchone()[0] == 0:
+                roles_defecto = [
+                    (1, 'Admin', 'Administrador', 'Full'),
+                    (2, 'Sistem', 'Persinal de sistemas', 'sistemas'),
+                    (3, 'UserBiblio', 'Bibliotecarios', 'biblioteca'),
+                    (4, 'UserBasic', 'Usuario Comun', 'basic')
+                ]
+                cursor.executemany("""
+                    INSERT INTO user_roles (id_rol, Roll, Descripcion, Permisos)
+                    VALUES (?, ?, ?, ?);
+                """, roles_defecto)
+                print("🔹 Roles por defecto cargados exitosamente en 'user_roles'.")
 
             conn.commit()
-            print("✅ Estructura de tablas SQLite inicializada y blindada.")
+            print("✅ Estructura completa de 4 tablas inicializada y vinculada.")
         except sqlite3.Error as e:
-            print(f"❌ ERROR DE BLINDAJE (Creación de Tablas): {e}")
+            print(f"❌ ERROR DE BLINDAJE (Creación de Tablas Completa): {e}")
         finally:
             conn.close()
