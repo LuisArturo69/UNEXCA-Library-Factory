@@ -101,16 +101,25 @@ def main():
                     for recurso in inventario_db:
                         # Extraemos los datos basándonos en la estructura de tu Sprint 2
                         print(f"▶ ID: {recurso['id']} | Tipo: {recurso['tipo']} | Nombre: {recurso['nombre']} | Estado: {recurso['estado']} | Detalles: {recurso['detalles']}")
-
+#----------------------------------------------------------------------------------------------------------------------
+#            elif opcion == '5':
+#                print("\n --- SIMULACIÓN DE PRÉSTAMO ---")
+#                id_rec = input(" Ingresa el ID (numérico) del recurso a prestar: ")
+#                if id_rec.isdigit():
+#                    controlador.actualizar_estado(recurso_id=int(id_rec), nuevo_estado="Prestado")
+#                    print(f" ¡Estado del recurso {id_rec} actualizado a 'Prestado'!")
+#                else:
+#                    print(" Error: Por favor ingresa un número de ID válido.")
+#-----------------------------------------------Actualizado por Luis Silva por ajuste de BD----------------------------
             elif opcion == '5':
                 print("\n --- SIMULACIÓN DE PRÉSTAMO ---")
                 id_rec = input(" Ingresa el ID (numérico) del recurso a prestar: ")
                 if id_rec.isdigit():
-                    controlador.actualizar_estado(recurso_id=int(id_rec), nuevo_estado="Prestado")
-                    print(f" ¡Estado del recurso {id_rec} actualizado a 'Prestado'!")
+                    # PASO ADAPTADO: Usamos el nuevo método pasándole el ID numérico
+                    # Puedes cambiar "luis" por el usuario que desees probar y el rol (1=Admin, 4=Basic, etc.)
+                    controlador.registrar_prestamo(id_recurso=int(id_rec), usuario_nombre="luis", rol_usuario=1)
                 else:
                     print(" Error: Por favor ingresa un número de ID válido.")
-
             elif opcion == '6':
                 print("Guardando cambios y cerrando conexiones de base de datos...")
                 print("Saliendo del sistema. ¡Hasta pronto!")
