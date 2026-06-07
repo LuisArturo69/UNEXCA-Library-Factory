@@ -1,3 +1,4 @@
+import os
 from src.factory.resources import resource_factory
 from src.database.conexion import DatabaseManager
 from src.database.inventario_controller import InventarioController
@@ -6,16 +7,18 @@ def inicializar_sistema():
     """Inicializa la infraestructura de la base de datos de los Sprints 1 y 2."""
     print("---  INICIALIZANDO SISTEMA UNEXCA-LIBRARY-FACTORY ---")
     print("Cargando el escudo de persistencia relacional...")
+
+    # ----- Migración automática: si existe DB antigua en raíz, la mueve a data/ -----
+    old_db = "biblioteca.db"
+    new_db = "data/biblioteca.db"
+    if os.path.exists(old_db) and not os.path.exists(new_db):
+        os.makedirs("data", exist_ok=True)
+        os.rename(old_db, new_db)
+        print(" Base de datos antigua migrada a la carpeta 'data/'.")
+
     try:
-#        # Fase Estructural
-#        db = DatabaseManager()
-#        controlador = InventarioController()
-#-----------------------------------------------------------------------------------------
-        # Fase Estructural
-        db = DatabaseManager() # Este es el único gestor oficial
-        # Le pasamos la instancia 'db' al controlador para que trabajen sincronizados
-        controlador = InventarioController(db_manager=db) 
-#-----------------------------------------------------------------------------------------        
+        db = DatabaseManager()                     # Ahora trabaja con data/biblioteca.db
+        controlador = InventarioController(db_manager=db)
         print("\n CONTROL DE CALIDAD SPRINT 1 Y 2:")
         print("1. Carpeta 'data/' y archivo 'biblioteca.db' verificados.")
         print("2. Estructura de tablas blindada.")
@@ -30,8 +33,8 @@ def main():
     if not controlador:
         return
 
-    # Lista temporal en memoria (opcional, si deseas mantener sincronización con Factory)
-    inventory = []
+    # NOTA: Se eliminó la lista 'inventory' porque toda la persistencia es mediante la BD.
+    # Los objetos creados con Factory se pueden descartar después de guardar en BD.
 
     while True:
         print("\n" + "="*40)
@@ -44,22 +47,20 @@ def main():
         print("5. Registrar Préstamo de Recurso")
         print("6. Salir")
         print("="*40)
-        
+
         opcion = input("Elige una opción (1-6): ")
 
         try:
             if opcion == '1':
                 t = input(" Ingresa el título del libro: ")
                 a = input(" Ingresa el nombre del autor: ")
-                
-                # 1. Instanciamos el objeto usando el patrón Factory
+
                 nuevo_recurso = resource_factory.crear_recurso('book', titulo=t, autor=a)
-                inventory.append(nuevo_recurso)
-                
-                # 2. Guardamos en la base de datos usando el Controlador (Sprint 2)
+                # Ya no se guarda en lista 'inventory'
+
                 controlador.registrar_recurso(
-                    tipo="Libro", 
-                    nombre=t, 
+                    tipo="Libro",
+                    nombre=t,
                     detalles={"autor": a, "id_factory": nuevo_recurso.id_producto}
                 )
                 print(f" ¡Libro guardado exitosamente en DB!")
@@ -67,26 +68,22 @@ def main():
             elif opcion == '2':
                 m = input(" Ingresa la marca de la laptop: ")
                 r = input(" Ingresa la cantidad de RAM (ej. 8GB): ")
-                
+
                 nuevo_recurso = resource_factory.crear_recurso('laptop', marca=m, ram=r)
-                inventory.append(nuevo_recurso)
-                
                 controlador.registrar_recurso(
-                    tipo="Laptop", 
-                    nombre=f"Laptop {m}", 
+                    tipo="Laptop",
+                    nombre=f"Laptop {m}",
                     detalles={"marca": m, "ram": r, "id_factory": nuevo_recurso.id_producto}
                 )
                 print(f" ¡Laptop guardada exitosamente en DB!")
 
             elif opcion == '3':
                 mod = input(" Ingresa el modelo de la tablet: ")
-                
+
                 nuevo_recurso = resource_factory.crear_recurso('tablet', modelo=mod)
-                inventory.append(nuevo_recurso)
-                
                 controlador.registrar_recurso(
-                    tipo="Tablet", 
-                    nombre=f"Tablet {mod}", 
+                    tipo="Tablet",
+                    nombre=f"Tablet {mod}",
                     detalles={"modelo": mod, "id_factory": nuevo_recurso.id_producto}
                 )
                 print(f" ¡Tablet guardada exitosamente en DB!")
@@ -94,37 +91,29 @@ def main():
             elif opcion == '4':
                 print("\n --- INVENTARIO ACTUAL (BASE DE DATOS) ---")
                 inventario_db = controlador.consultar_inventario()
-                
+
                 if not inventario_db:
                     print("El inventario está vacío. ¡Crea algunos recursos primero!")
                 else:
                     for recurso in inventario_db:
-                        # Extraemos los datos basándonos en la estructura de tu Sprint 2
                         print(f"▶ ID: {recurso['id']} | Tipo: {recurso['tipo']} | Nombre: {recurso['nombre']} | Estado: {recurso['estado']} | Detalles: {recurso['detalles']}")
-#----------------------------------------------------------------------------------------------------------------------
-#            elif opcion == '5':
-#                print("\n --- SIMULACIÓN DE PRÉSTAMO ---")
-#                id_rec = input(" Ingresa el ID (numérico) del recurso a prestar: ")
-#                if id_rec.isdigit():
-#                    controlador.actualizar_estado(recurso_id=int(id_rec), nuevo_estado="Prestado")
-#                    print(f" ¡Estado del recurso {id_rec} actualizado a 'Prestado'!")
-#                else:
-#                    print(" Error: Por favor ingresa un número de ID válido.")
-#-----------------------------------------------Actualizado por Luis Silva por ajuste de BD----------------------------
+
             elif opcion == '5':
                 print("\n --- SIMULACIÓN DE PRÉSTAMO ---")
                 id_rec = input(" Ingresa el ID (numérico) del recurso a prestar: ")
                 if id_rec.isdigit():
-                    # PASO ADAPTADO: Usamos el nuevo método pasándole el ID numérico
-                    # Puedes cambiar "luis" por el usuario que desees probar y el rol (1=Admin, 4=Basic, etc.)
                     controlador.registrar_prestamo(id_recurso=int(id_rec), usuario_nombre="luis", rol_usuario=1)
                 else:
                     print(" Error: Por favor ingresa un número de ID válido.")
+
             elif opcion == '6':
                 print("Guardando cambios y cerrando conexiones de base de datos...")
+                # Cerrar conexión si es necesario (opcional)
+                if controlador.db_manager:
+                    controlador.db_manager.close()
                 print("Saliendo del sistema. ¡Hasta pronto!")
                 break
-            
+
             else:
                 print("Opción no válida. Por favor, escribe un número del 1 al 6.")
 
@@ -136,7 +125,4 @@ if __name__ == "__main__":
         main()
     except Exception as e:
         print(f"\n Ocurrió un error inesperado en la ejecución general: {e}")
-    #ACTUALIZADO POR LUIS SILVA EL 31052026 PARA PODER EJECUTAr directamente desde navegador de archivos#
-    # Esta línea es un salvavidas si ejecutas fuera de una terminal integrada.
-    # Evita que la ventana se cierre automáticamente si el programa falla al arrancar.
     input("\nPresiona ENTER para cerrar la ventana...")
