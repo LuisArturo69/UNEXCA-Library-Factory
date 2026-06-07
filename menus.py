@@ -41,7 +41,6 @@ def menu_estudiante():
         elif opcion == '5':
             print("\n Saliendo del menú Estudiante...")
             break
-        ñ
         else:
             print("\n Opción no válida. Intenta de nuevo.")
 
