@@ -47,12 +47,12 @@ class InventarioController:
             
             recurso_id = cursor.lastrowid
             conn.commit()
-            print(f"✅ Recurso '{nombre}' registrado en Features con ID: {recurso_id}")
+            print(f"Recurso '{nombre}' registrado en Features con ID: {recurso_id}")
             return True
             
         except sqlite3.Error as e:
             conn.rollback()
-            print(f"❌ ERROR DE BLINDAJE (Registrar en Features): {e}")
+            print(f"ERROR DE BLINDAJE (Registrar en Features): {e}")
             return False
         finally:
             conn.close()
@@ -85,7 +85,7 @@ class InventarioController:
             return inventario_completo
             
         except sqlite3.Error as e:
-            print(f"❌ ERROR DE BLINDAJE (Consultar Features): {e}")
+            print(f"ERROR DE BLINDAJE (Consultar Features): {e}")
             return []
         finally:
             conn.close()
@@ -104,13 +104,13 @@ class InventarioController:
             conn.commit()
             
             if cursor.rowcount > 0:
-                print(f"🗑️ Recurso ID {recurso_id} eliminado de Features.")
+                print(f"Recurso ID {recurso_id} eliminado de Features.")
                 return True
             else:
-                print(f"⚠️ No se encontró el recurso ID {recurso_id}.")
+                print(f"No se encontró el recurso ID {recurso_id}.")
                 return False
         except sqlite3.Error as e:
-            print(f"❌ ERROR DE BLINDAJE (Eliminar Recurso): {e}")
+            print(f"ERROR DE BLINDAJE (Eliminar Recurso): {e}")
             return False
         finally:
             conn.close()
@@ -136,12 +136,12 @@ class InventarioController:
             recurso = cursor.fetchone()
 
             if not recurso:
-                print(f"⚠️ El recurso con ID {id_recurso} no existe en el sistema.")
+                print(f"El recurso con ID {id_recurso} no existe en el sistema.")
                 return False
 
             unidades_actuales = recurso[0]
             if unidades_actuales <= 0:
-                print(f"❌ Operación rechazada: No quedan unidades físicas disponibles para el ID {id_recurso}.")
+                print(f"Operación rechazada: No quedan unidades físicas disponibles para el ID {id_recurso}.")
                 return False
 
             # Generar datos de fecha y hora para el registro
@@ -164,13 +164,13 @@ class InventarioController:
 
             # Transacción completa segura
             conn.commit()
-            print(f"✅ Préstamo procesado con éxito para el recurso ID {id_recurso}.")
-            print(f"📉 Stock actualizado: {unidades_actuales - 1} unidades restantes.")
+            print(f"Préstamo procesado con éxito para el recurso ID {id_recurso}.")
+            print(f"Stock actualizado: {unidades_actuales - 1} unidades restantes.")
             return True
             
         except sqlite3.Error as e:
             conn.rollback()
-            print(f"❌ ERROR DE BLINDAJE (Transacción Préstamo): {e}")
+            print(f"ERROR DE BLINDAJE (Transacción Préstamo): {e}")
             return False
         finally:
             conn.close()
@@ -195,10 +195,104 @@ class InventarioController:
             """, (cedula, nombre, fecha_actual, roll, pasword, mail))
             
             conn.commit()
-            print(f"👤 Usuario '{nombre}' registrado con éxito en el sistema.")
+            print(f"Usuario '{nombre}' registrado con éxito en el sistema.")
             return True
         except sqlite3.Error as e:
-            print(f"❌ ERROR DE BLINDAJE (Registrar Usuario): {e}")
+            print(f"ERROR DE BLINDAJE (Registrar Usuario): {e}")
             return False
+        finally:
+            conn.close()
+
+    # =========================================================================
+    # 4. MÉTODO DE DEVOLUCIONES (Corregida Identación y Palabra extraña)
+    # =========================================================================       
+    def registrar_devolucion(self, id_recurso, usuario_nombre="luis", rol_usuario=1):
+        """
+        U/C: UPDATE/CREATE - Incrementa 1 unidad de stock en Features y asienta
+        el registro de la devolución de forma blindada en la tabla 'movements'.
+        """
+        conn = self.db_manager.conectar()
+        if not conn: 
+            return False
+            
+        try:
+            cursor = conn.cursor()
+
+            # 1. Verificar que el recurso exista en Features
+            cursor.execute("SELECT unidades FROM Features WHERE id_recurso = ?;", (id_recurso,))
+            recurso = cursor.fetchone()
+
+            if not recurso:
+                print(f"El recurso con ID {id_recurso} no existe en el sistema.")
+                return False
+
+            unidades_actuales = recurso[0]
+
+            # Generar datos de fecha y hora para el registro
+            ahora = datetime.now()
+            fecha_actual = ahora.strftime("%d/%m/%Y")
+            hora_actual = ahora.strftime("%I:%M %p").lower()
+
+            # 2. Actualizar stock sumando una unidad de vuelta al inventario
+            cursor.execute("""
+                UPDATE Features 
+                SET unidades = ?, lastupdate = ?, lasttime = ? 
+                WHERE id_recurso = ?;
+            """, (unidades_actuales + 1, fecha_actual, hora_actual, id_recurso))
+
+            # 3. Insertar el registro correspondiente en la tabla movements como 'Devolucion'
+            cursor.execute("""
+                INSERT INTO movements (id_recurso, usuario, Rollusuario, Tipodeaccion, fecha)
+                VALUES (?, ?, ?, ?, ?);
+            """, (id_recurso, usuario_nombre, rol_usuario, 'Devolucion', fecha_actual))
+
+            conn.commit()
+            print(f"Devolución procesada con éxito para el recurso ID {id_recurso}.")
+            print(f"Stock actualizado: {unidades_actuales + 1} unidades en total.")
+            return True
+            
+        except sqlite3.Error as e:
+            conn.rollback()
+            print(f"ERROR DE BLINDAJE (Transacción Devolución): {e}")
+            return False
+        finally:
+            conn.close()
+
+    # =========================================================================
+    # 5. AUTENTICACIÓN DE USUARIOS (Corregida Identación)
+    # =========================================================================  
+    def autenticar_usuario(self, cedula, password):
+        """
+        Busca un usuario por cédula y contraseña en la tabla Users.
+        Retorna un diccionario con los datos del usuario si coincide, o None si no.
+        """
+        conn = self.db_manager.conectar()
+        if not conn:
+            return None
+            
+        try:
+            cursor = conn.cursor()
+            # Hacemos un SELECT buscando coincidencia exacta
+            cursor.execute("""
+                SELECT id_user, cedula, nombre, roll 
+                FROM Users 
+                WHERE cedula = ? AND pasword = ?;
+            """, (cedula, password))
+            
+            registro = cursor.fetchone()
+            
+            if registro:
+                # Retornamos los datos limpios en un diccionario
+                return {
+                    "id": registro["id_user"],
+                    "cedula": registro["cedula"],
+                    "nombre": registro["nombre"],
+                    "rol": registro["roll"] # 1=Admin, 2=Sistem, 3=UserBiblio, 4=UserBasic
+                }
+            return None
+            
+        except sqlite3.Error as e:
+            print(f"ERROR DE BLINDAJE (Autenticación): {e}")
+            return None
         finally:
             conn.close()
