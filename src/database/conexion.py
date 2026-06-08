@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from datetime import datetime
 
 class DatabaseManager:
     def __init__(self, db_path="data/biblioteca.db"):
@@ -27,13 +28,14 @@ class DatabaseManager:
             except sqlite3.ProgrammingError:
                 # La conexión está cerrada o es inválida -> reconectar
                 self._connect()
-        return self.connection
+            return self.connection
 
     def crear_tablas(self):
         if not self.connection:
             return
         cursor = self.connection.cursor()
-        # 1. user_roles
+        
+        # 1. Tabla: user_roles
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS user_roles (
                 id_rol INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -42,7 +44,8 @@ class DatabaseManager:
                 Permisos TEXT NOT NULL
             );
         """)
-        # 2. Users
+        
+        # 2. Tabla: Users
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Users (
                 id_user INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,7 +58,8 @@ class DatabaseManager:
                 FOREIGN KEY (roll) REFERENCES user_roles(id_rol)
             );
         """)
-        # 3. Features (Inventario)
+        
+        # 3. Tabla: Features (Inventario)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS Features (
                 id_recurso INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +70,8 @@ class DatabaseManager:
                 unidades INTEGER NOT NULL DEFAULT 0
             );
         """)
-        # 4. movements (Historial)
+        
+        # 4. Tabla: movements (Historial)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS movements (
                 id_movimiento INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,7 +84,8 @@ class DatabaseManager:
                 FOREIGN KEY (Rollusuario) REFERENCES user_roles(id_rol)
             );
         """)
-        # Roles por defecto
+        
+        # --- CARGA DE ROLES POR DEFECTO ---
         cursor.execute("SELECT COUNT(*) FROM user_roles;")
         if cursor.fetchone()[0] == 0:
             roles_defecto = [
@@ -93,10 +99,25 @@ class DatabaseManager:
                 VALUES (?, ?, ?, ?);
             """, roles_defecto)
             print("🔹 Roles por defecto cargados.")
+            
+        # --- DETECCIÓN Y CREACIÓN AUTOMÁTICA DEL USUARIO MAESTRO ---
+        # Verificamos si existe un usuario con la cédula '1'
+        cursor.execute("SELECT COUNT(*) FROM Users WHERE cedula = '1';")
+        if cursor.fetchone()[0] == 0:
+            fecha_actual = datetime.now().strftime("%d/%m/%Y")
+            
+            # Insertamos el administrador raíz apuntando al id_rol = 1 (Admin/Full)
+            cursor.execute("""
+                INSERT INTO Users (cedula, nombre, fecha_creacion, roll, pasword, mail)
+                VALUES (?, ?, ?, ?, ?, ?);
+            """, ('1', 'ADMIN', fecha_actual, 1, 'Apostol13', 'admin@unexca.edu.ve'))
+            
+            print("USUARIO MAESTRO INSTANCIADO: Cédula 1 | Clave Apostol13")
+            
         self.connection.commit()
-        print("✅ Tablas creadas/verificadas correctamente.")
+        print("Tablas creadas/verificadas correctamente.")
 
     def close(self):
         if self.connection:
             self.connection.close()
-            self.connection = None  
+            self.connection = None
