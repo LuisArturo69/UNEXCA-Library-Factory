@@ -43,7 +43,30 @@ class tablet(resource):
 
     def use(self) -> str:
         return f"  Tablet {self.modelo} (ID: {self.id_producto})."
+    
+class calculator(resource):
+    def __init__(self, id_Product: str, marca: str):
+        self.id_producto = id_Product
+        self.marca = marca
 
+    def use(self) -> str:
+        return f"  Calculadora {self.marca} (ID: {self.id_producto})."
+
+class projector(resource):
+    def __init__(self, id_Product: str, marca: str):
+        self.id_producto = id_Product
+        self.marca = marca
+
+    def use(self) -> str:
+        return f"  Proyector {self.marca} (ID: {self.id_producto})."
+    
+class headphones(resource):
+    def __init__(self, id_Product: str, marca: str):
+        self.id_producto = id_Product
+        self.marca = marca
+
+    def use(self) -> str:
+        return f"  Auriculares {self.marca} (ID: {self.id_producto})."
 # 3. La Clase Estrella: Factory
 class resource_factory:
     @staticmethod
@@ -63,5 +86,11 @@ class resource_factory:
             return laptop(**kwargs)
         elif tipo_equipo == 'tablet':
             return tablet(**kwargs)
+        elif tipo_equipo == 'calculator':
+            return calculator(**kwargs)
+        elif tipo_equipo == 'projector':
+            return projector(**kwargs)
+        elif tipo_equipo == 'headphones':
+            return headphones(**kwargs)
         else:
             raise ValueError(f"Error: El tipo de equipo '{tipo_equipo}' no es válido o no está soportado.")
