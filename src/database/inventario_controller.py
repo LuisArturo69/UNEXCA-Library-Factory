@@ -160,7 +160,7 @@ class InventarioController:
             cursor.execute("""
                 INSERT INTO movements (id_recurso, usuario, Rollusuario, Tipodeaccion, fecha)
                 VALUES (?, ?, ?, ?, ?);
-            """, (id_recurso, usuario_nombre, rol_usuario, 'Prestamo', fecha_actual))
+            """, (id_recurso, usuario_nombre, rol_usuario, 'Prestamo', f"{fecha_actual} {hora_actual}"))
 
             # Transacción completa segura
             conn.commit()
@@ -175,37 +175,6 @@ class InventarioController:
         finally:
             conn.close()
 
-
-    # =========================================================================
-    # 3. GESTIÓN DE USUARIOS Y ROLES (Tablas: Users / user_roles)
-    # =========================================================================
-    def registrar_usuario(self, cedula, nombre, roll=4, pasword="123", mail="correo@gmail.com"):
-        """Inserta un nuevo usuario en la tabla Users usando llaves foráneas a user_roles."""
-        conn = self.db_manager.conectar()
-        if not conn: 
-            return False
-            
-        try:
-            cursor = conn.cursor()
-            fecha_actual = datetime.now().strftime("%d/%m/%Y")
-            
-            cursor.execute("""
-                INSERT INTO Users (cedula, nombre, fecha_creacion, roll, pasword, mail)
-                VALUES (?, ?, ?, ?, ?, ?);
-            """, (cedula, nombre, fecha_actual, roll, pasword, mail))
-            
-            conn.commit()
-            print(f"Usuario '{nombre}' registrado con éxito en el sistema.")
-            return True
-        except sqlite3.Error as e:
-            print(f"ERROR DE BLINDAJE (Registrar Usuario): {e}")
-            return False
-        finally:
-            conn.close()
-
-    # =========================================================================
-    # 4. MÉTODO DE DEVOLUCIONES (Corregida Identación y Palabra extraña)
-    # =========================================================================       
     def registrar_devolucion(self, id_recurso, usuario_nombre="luis", rol_usuario=1):
         """
         U/C: UPDATE/CREATE - Incrementa 1 unidad de stock en Features y asienta
@@ -244,7 +213,7 @@ class InventarioController:
             cursor.execute("""
                 INSERT INTO movements (id_recurso, usuario, Rollusuario, Tipodeaccion, fecha)
                 VALUES (?, ?, ?, ?, ?);
-            """, (id_recurso, usuario_nombre, rol_usuario, 'Devolucion', fecha_actual))
+            """, (id_recurso, usuario_nombre, rol_usuario, 'Devolucion', f"{fecha_actual} {hora_actual}"))
 
             conn.commit()
             print(f"Devolución procesada con éxito para el recurso ID {id_recurso}.")
@@ -259,7 +228,75 @@ class InventarioController:
             conn.close()
 
     # =========================================================================
-    # 5. AUTENTICACIÓN DE USUARIOS (Corregida Identación)
+    # 3. CONSULTA DE HISTORIAL AUDITABLE PARA EL FRONTEND
+    # =========================================================================
+    def consultar_historial_usuario(self, cedula_o_nombre):
+        """
+        Trae el historial real de movimientos filtrado por el usuario logueado.
+        Realiza un INNER JOIN para rescatar la descripción del recurso.
+        """
+        conn = self.db_manager.conectar()
+        if not conn:
+            return []
+            
+        try:
+            cursor = conn.cursor()
+            # MODIFICADO: Cambiado m.id_movement por m.id_movimiento en el ORDER BY
+            cursor.execute("""
+                SELECT m.fecha, m.Tipodeaccion, m.id_recurso, f.descripcion 
+                FROM movements m
+                INNER JOIN Features f ON m.id_recurso = f.id_recurso
+                WHERE UPPER(m.usuario) = UPPER(?)
+                ORDER BY m.id_movimiento DESC;
+            """, (str(cedula_o_nombre),))
+            
+            registros = cursor.fetchall()
+            historial = []
+            
+            for fecha, tipo_acc, id_rec, desc in registros:
+                historial.append({
+                    "fecha": fecha,
+                    "tipo_accion": tipo_acc, # 'Prestamo' o 'Devolucion'
+                    "id_recurso": id_rec,
+                    "nombre_recurso": desc.split('|')[0] # Extraemos el título limpio sin metadatos
+                })
+            return historial
+            
+        except sqlite3.Error as e:
+            print(f"ERROR DE BLINDAJE (Consulta Historial): {e}")
+            return []
+        finally:
+            conn.close()
+
+    # =========================================================================
+    # 4. GESTIÓN DE USUARIOS Y ROLES (Tablas: Users / user_roles)
+    # =========================================================================
+    def registrar_usuario(self, cedula, nombre, roll=4, pasword="123", mail="correo@gmail.com"):
+        """Inserta un nuevo usuario en la tabla Users usando llaves foráneas a user_roles."""
+        conn = self.db_manager.conectar()
+        if not conn: 
+            return False
+            
+        try:
+            cursor = conn.cursor()
+            fecha_actual = datetime.now().strftime("%d/%m/%Y")
+            
+            cursor.execute("""
+                INSERT INTO Users (cedula, nombre, fecha_creacion, roll, pasword, mail)
+                VALUES (?, ?, ?, ?, ?, ?);
+            """, (cedula, nombre, fecha_actual, roll, pasword, mail))
+            
+            conn.commit()
+            print(f"Usuario '{nombre}' registrado con éxito en el sistema.")
+            return True
+        except sqlite3.Error as e:
+            print(f"ERROR DE BLINDAJE (Registrar Usuario): {e}")
+            return False
+        finally:
+            conn.close()
+
+    # =========================================================================
+    # 5. AUTENTICACIÓN DE USUARIOS (Corregido Acceso a Tuplas de SQLite)
     # =========================================================================  
     def autenticar_usuario(self, cedula, password):
         """
@@ -272,7 +309,6 @@ class InventarioController:
             
         try:
             cursor = conn.cursor()
-            # Hacemos un SELECT buscando coincidencia exacta
             cursor.execute("""
                 SELECT id_user, cedula, nombre, roll 
                 FROM Users 
@@ -282,12 +318,12 @@ class InventarioController:
             registro = cursor.fetchone()
             
             if registro:
-                # Retornamos los datos limpios en un diccionario
+                # Corregido: En sqlite3 estándar los registros se acceden por índice numérico
                 return {
-                    "id": registro["id_user"],
-                    "cedula": registro["cedula"],
-                    "nombre": registro["nombre"],
-                    "rol": registro["roll"] # 1=Admin, 2=Sistem, 3=UserBiblio, 4=UserBasic
+                    "id": registro[0],
+                    "cedula": registro[1],
+                    "nombre": registro[2],
+                    "rol": registro[3] # 1=Admin, 2=Sistem, 3=UserBiblio, 4=UserBasic
                 }
             return None
             
