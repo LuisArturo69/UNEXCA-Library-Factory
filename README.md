@@ -1,36 +1,75 @@
-# 🏛️ Factory Apostol: Sistema de préstamo de recursos
+# 🏛️ Library-Factory UNEXCA: Sistema de Gestión de Préstamos
 
-## 🚀 Descripción
-UNEXCA-Library-Factory es una solución de ingeniería diseñada para la gestión de recursos (libros, laptops y tablets) de la UNEXCA. El sistema utiliza el patrón de diseño **Factory Method** para tratar cada recurso de forma profesional y escalable.
+## Descripción
+**Library-Factory UNEXCA** (desarrollado por el equipo *Los Apóstoles*) es una solución de ingeniería de software diseñada para la administración, préstamo y auditoría en tiempo real de los bienes e inventario de la universidad (Libros, Laptops y Equipos Audiovisuales). 
 
-El enfoque principal de este proyecto es la **resiliencia**: un software "blindado" que no colapsa ante errores del usuario, con persistencia de datos en archivos planos.
+El sistema implementa de forma rigurosa el patrón creacional **Factory Method** para garantizar una instanciación dinámica, limpia y escalable de los recursos, asegurando el cumplimiento del principio Abierto/Cerrado (SOLID). Esta versión introduce una arquitectura robusta de tres capas conectada a persistencia relacional y una interfaz de usuario inteligente basada en roles.
+
+---
 
 ## 🛠️ Stack Tecnológico
 * **Lenguaje:** Python 3.x
-* **Persistencia:** Archivos JSON (Serialización de datos)
-* **Gestión:** Metodología Ágil (Scrum)
+* **Interfaz Gráfica:** Tkinter (Con diseño optimizado *Grid Dashboard*)
+* **Persistencia:** SQLite 3 (Base de datos relacional integrada)
 * **Control de Versiones:** Git / GitHub
+* **Metodología:** Desarrollo Ágil (Scrum)
+* **Estado Actual:** `Versión 1.0 BETA` 
 
-## 🏗️ Arquitectura del Proyecto (Módulos)
-- `src/`: Carpeta raíz del código fuente.
-  - `src/factory/`: Lógica para la creación dinámica de recursos.
-  - `src/persistence/`: El "Escudo" para leer y escribir archivos JSON.
-  - `src/ui/`: Interfaz gráfica moderna.
-- `data/`: Almacenamiento de archivos JSON (Base de datos del sistema).
-- `tests/`: Pruebas de resistencia para evitar fallos.
+---
 
-## 👥 Equipo (LOS APOSTOLES)
-*   **Lider de Equipo** Luis Arturo Silva Rollin V-28.101.742
-*   **Equpo de Pruebas**
-    1. Luis Arturo Silva Rollin V-28.101.742
-    2. Manuel Jesus Noriega Lopez  V-25.216.071
-*   **Lideres de Desarrollo**
-*   1. Jose Miguel Niño Gil V-29.909.282
-*   2. Deninson Jose Godoy Celis V-28.158.313   
-*   **Equipo de Desarrollo (Los Apostoles):**
-    1. Luis Arturo Silva Rollin V-28.101.742
-    2. Manuel Jesus Noriega Lopez  V-25.216.071
-    3. Manuel Tellez V-20.027.142
-    4. Jose Miguel Niño Gil V-29.909.282
-    5. Yuseily Nathaly Valero Albarran V-31.660.944
-    6. Deninson Jose Godoy Celis V-28.158.313
+## 🏗️ Arquitectura del Proyecto (Módulos de Tres Capas)
+
+El proyecto sigue una estricta separación de responsabilidades para aislar la interfaz gráfica de la lógica de negocio y los accesos SQL:
+
+📁 library_factory_unexca/
+│
+├── 📁 data/
+│   └── biblioteca.db
+├── 📁 src/
+│   ├── 📁 database/
+│   │   ├── conexion.py               # Capa de Datos: Inicialización y consultas seguras en SQLite
+│   │   └── inventario_controller.py  # Capa de Negocio: Controlador lógico de flujos y transacciones
+│   │
+│   └── 📁 factory/
+│       └── resource.py               # Patrón Creacional: Implementación del Factory Method
+│
+└── LICENSE                           
+└── REDME                             # Documentacion del Proyecto
+└── front_menus                       # Font del Proyecto
+
+---
+
+## ⚙️ Características Clave Implementadas
+
+1.  **Fábrica de Recursos (Factory Method):** Centralización de la creación de objetos (`Libro`, `Laptop`, `Audiovisual`) mediante una llave (*Factory Key*), guardando metadatos estructurados en formato JSON dentro de la base de datos relacional.
+2.  **Seguridad por Roles:** El sistema autentica mediante Cédula e identifica automáticamente el privilegio del usuario para desplegar vistas específicas:
+    * **Administrador:** Acceso total, instanciación en fábrica de recursos, gestión CRUD de usuarios y auditoría global.
+    * **Bibliotecario:** Operación exprés orientada a transacciones y consulta de inventario.
+    * **Estudiante:** Panel protegido y confidencial restringido únicamente a sus movimientos personales.
+3.  **Panel de Auditoría Dinámico:** Interfaz centralizada con sistema de pestañas (`Notebook`) y redirección inteligente que evita la duplicidad de pantallas y optimiza la navegación.
+4.  **Diseño Cohesivo y Profesional:** Inclusión visual de la etiqueta `Version 1.0 BETA` en el Login y barras de pie de página de todos los menús del sistema.
+
+---
+
+## 👥 Equipo (LOS APÓSTOLES)
+
+* **Líder de Equipo:**
+    * Luis Arturo Silva Rollin — V-28.101.742
+* **Líderes de Desarrollo:**
+    * José Miguel Niño Gil — V-29.909.282
+    * Deninson José Godoy Celis — V-28.158.313
+* **Equipo de Pruebas:**
+    * Manuel Téllez — V-20.027.142
+    * Manuel Jesús Noriega López — V-25.216.071
+* **Equipo de Documentarion:**
+    * Yuseily Nathaly Valero Albarrán — V-31.660.944
+* **Equipo de Desarrollo (Integrantes):**
+    * Luis Arturo Silva Rollin — V-28.101.742
+    * Manuel Jesús Noriega López — V-25.216.071
+    * Manuel Téllez — V-20.027.142
+    * José Miguel Niño Gil — V-29.909.282
+    * Yuseily Nathaly Valero Albarrán — V-31.660.944
+    * Deninson José Godoy Celis — V-28.158.313
+
+---
+*Trayecto II-I de Informática — Universidad Nacional Experimental de la Gran Caracas (UNEXCA), Sede La Floresta.*
