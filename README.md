@@ -22,20 +22,18 @@ El sistema implementa de forma rigurosa el patrón creacional **Factory Method**
 El proyecto sigue una estricta separación de responsabilidades para aislar la interfaz gráfica de la lógica de negocio y los accesos SQL:
 
 📁 library_factory_unexca/
-│
-├── 📁 data/
-│   └── biblioteca.db
-├── 📁 src/
-│   ├── 📁 database/
-│   │   ├── conexion.py               # Capa de Datos: Inicialización y consultas seguras en SQLite
-│   │   └── inventario_controller.py  # Capa de Negocio: Controlador lógico de flujos y transacciones
-│   │
-│   └── 📁 factory/
-│       └── resource.py               # Patrón Creacional: Implementación del Factory Method
-│
-└── LICENSE                           
-└── REDME                             # Documentacion del Proyecto
-└── front_menus                       # Font del Proyecto
+📁 data/
+   biblioteca.db
+📁 src/
+   📁 database/
+      conexion.py                 # Capa de Datos: Inicialización y consultas seguras en SQLite
+      inventario_controller.py    # Capa de Negocio: Controlador lógico de flujos y transacciones
+
+   📁 factory/
+      resource.py                 # Patrón Creacional: Implementación del Factory Method
+LICENSE                           
+REDME                             # Documentacion del Proyecto
+front_menus                       # Font del Proyecto
 
 ---
 
