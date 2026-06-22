@@ -59,11 +59,15 @@ class Aplicacion:
         entry_cedula = tk.Entry(inner_form, font=('Segoe UI', 11), bd=1, relief=tk.SOLID, width=22)
         entry_cedula.grid(row=0, column=1, pady=10, padx=(10, 0))
         entry_cedula.focus()
+        # "Cambiar el foco al presionar Enter en el campo de cédula"
+        entry_cedula.bind('<Return>', lambda event: entry_password.focus_set())  # Pasar al campo contraseña
+
 
         tk.Label(inner_form, text="Contraseña:", bg="white", font=('Segoe UI', 10, 'bold'), fg=COLOR_TEXTO_MAIN).grid(row=1, column=0, pady=10, sticky=tk.W)
         entry_password = tk.Entry(inner_form, font=('Segoe UI', 11), bd=1, relief=tk.SOLID, width=22, show="*")
         entry_password.grid(row=1, column=1, pady=10, padx=(10, 0))
-
+        #cambiar el foco al presionar Enter en el campo de contraseña
+        entry_password.bind('<Return>', lambda event: verificar_credenciales())
         def verificar_credenciales():
             cedula = entry_cedula.get().strip()
             password = entry_password.get().strip()
@@ -75,8 +79,6 @@ class Aplicacion:
             usuario = self.controlador.autenticar_usuario(cedula, password)
             if usuario:
                 self.usuario_actual = usuario
-                messagebox.showinfo("Acceso Concedido", f"¡Bienvenido, {usuario['nombre']}!")
-                
                 if usuario["rol"] in (1, 2):  
                     self.mostrar_menu_administrador()
                 elif usuario["rol"] == 3:     
