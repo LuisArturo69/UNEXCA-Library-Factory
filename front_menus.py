@@ -16,11 +16,15 @@ class Aplicacion:
         self.usuario_actual = None 
 
         self.root.title("SISTEMA DE GESTIÓN DE PRÉSTAMOS - UNEXCA")
-        self.root.geometry("850x570") 
+        
+        # === VENTANA REDIMENSIONABLE ===
+        self.root.geometry("900x600")  # Tamaño inicial
+        self.root.resizable(True, True)  # Permitir redimensionar
+        self.root.minsize(800, 550)  # Tamaño mínimo
+        
         self.root.configure(bg=COLOR_FONDO)
-        self.root.resizable(False, False)
 
-        # Centrar Ventana de Forma Dinámica
+        # Centrar Ventana (solo al inicio)
         self.root.update_idletasks()
         ancho = self.root.winfo_width()
         alto = self.root.winfo_height()
@@ -61,13 +65,36 @@ class Aplicacion:
         entry_cedula.focus()
         # "Cambiar el foco al presionar Enter en el campo de cédula"
         entry_cedula.bind('<Return>', lambda event: entry_password.focus_set())  # Pasar al campo contraseña
-
-
+        
         tk.Label(inner_form, text="Contraseña:", bg="white", font=('Segoe UI', 10, 'bold'), fg=COLOR_TEXTO_MAIN).grid(row=1, column=0, pady=10, sticky=tk.W)
-        entry_password = tk.Entry(inner_form, font=('Segoe UI', 11), bd=1, relief=tk.SOLID, width=22, show="*")
-        entry_password.grid(row=1, column=1, pady=10, padx=(10, 0))
+        frame_password = tk.Frame(inner_form, bg="white")
+        frame_password.grid(row=1, column=1, pady=10, padx=(10, 0), sticky="ew")
+
+        entry_password = tk.Entry(frame_password, font=('Segoe UI', 11), bd=1, relief=tk.SOLID, width=19, show="*")
+        entry_password.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        mostrar_password = tk.BooleanVar(value=False)
+
+        def toggle_password():
+            if mostrar_password.get():
+                entry_password.config(show="*")
+                btn_mostrar.config(text="👁️")
+                mostrar_password.set(False)
+            else:
+                entry_password.config(show="")
+                btn_mostrar.config(text="👁️‍🗨️")
+                mostrar_password.set(True)
+
+        btn_mostrar = tk.Button(frame_password, text="👁️", font=('Segoe UI', 10), 
+                            bg="white", bd=0, cursor="hand2", 
+                            command=toggle_password, relief=tk.FLAT)
+        btn_mostrar.pack(side=tk.RIGHT, padx=(2, 0))
+
+        entry_password.bind('<Return>', lambda event: verificar_credenciales())
+
         #cambiar el foco al presionar Enter en el campo de contraseña
         entry_password.bind('<Return>', lambda event: verificar_credenciales())
+        
         def verificar_credenciales():
             cedula = entry_cedula.get().strip()
             password = entry_password.get().strip()
@@ -119,7 +146,6 @@ class Aplicacion:
         
         tk.Label(frame_search, text="🔍", bg="white", fg="gray").pack(side=tk.LEFT, padx=5)
         entry_search = tk.Entry(frame_search, font=('Segoe UI', 10), bg="white", bd=0, width=25)
-        entry_search.insert(0, "Buscar por Cédula...")
         entry_search.pack(side=tk.LEFT)
 
         frame_grid = tk.Frame(self.contenedor_vista, bg="white", bd=1, relief=tk.SOLID, padx=15, pady=15)
